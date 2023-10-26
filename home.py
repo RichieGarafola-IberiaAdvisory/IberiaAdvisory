@@ -31,4 +31,4 @@ st.write("- Presents processed invoice data for review and analysis.")
 
 st.markdown("---")
 # Footer
-st.write("If you have any questions or need assistance, please feel free to contact Richie RGarafola@IberiaAdvisory.com")
+st.write("If you have any questions or need assistance, please feel free to contact Richie:      RGarafola@IberiaAdvisory.com")
