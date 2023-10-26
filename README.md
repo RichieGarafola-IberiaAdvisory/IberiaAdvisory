@@ -1,6 +1,4 @@
-<!-- ![Iberia Advisory](./Images/iberia-logo.png) -->
-
-<img src="./Images/iberia-logo.png" width="300" height="300">
+![Iberia Advisory](./Images/iberia-logo.png)
 
 # Iberia Advisory Automation Tools
 
