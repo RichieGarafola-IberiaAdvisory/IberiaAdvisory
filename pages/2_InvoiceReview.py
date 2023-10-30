@@ -60,7 +60,45 @@ def check_password():
 # Check the user password using the check_password() function and sets the is_logged_in flag to True if the password is correct.
 if check_password():
     is_logged_in = True
-    
+    # Function that allows you to find where the header is located within an Excel sheet
+
+    def find_start_row(file_path, column_name, sheet_name=None):
+        """
+        Find the starting row index containing a specific column name in an Excel sheet.
+
+        Parameters:
+        - file_path (str): The file path of the Excel file to be searched.
+        - column_name (str): The name of the column to search for within the sheet.
+        - sheet_name (str, optional): The name of the sheet in the Excel file (default is None).
+          If sheet_name is not provided, the function attempts to read the first sheet.
+
+        Returns:
+        - int: The row index where the specified column name is found.
+
+        Raises:
+        - ValueError: If the specified column name is not found in the sheet.
+
+        This function reads the Excel file specified by 'file_path' and searches for the
+        row containing the 'column_name' in the specified 'sheet_name' (or the first sheet if
+        'sheet_name' is not provided). Once the row is found, the function returns its index.
+
+        If the column name is not found in the sheet, a ValueError is raised.
+
+        Example usage:
+        start_row = find_start_row("example.xlsx", "Name", "Sheet1")
+        """
+        if sheet_name is None:
+            # If sheet_name is not provided, try to read the first sheet
+            df = pd.read_excel(file_path, header=None, index_col=None)
+        else:
+            df = pd.read_excel(file_path, header=None, index_col=None, sheet_name=sheet_name)
+
+        for row_number, row in df.iterrows():
+            if column_name in row.values:
+                return row_number
+
+        raise ValueError(f'Column "{column_name}" not found in the sheet "{sheet_name}" of the file.')
+
     # Define a function to calculate the x-week lookback for a given date
     def calculate_x_week_lookback(effective_date, x):
         return effective_date - timedelta(weeks=x)
@@ -116,19 +154,28 @@ if check_password():
     # Check if files are uploaded and load data if necessary
     try:
         if uploaded_raw_invoice:
-            st.session_state.raw_invoice = pd.read_excel(uploaded_raw_invoice, skiprows=1).drop("Unnamed: 0", axis=1)
+            # Use the find_start_row function to identify the header row in the raw_invoice Excel file
+            start_row_raw_invoice = find_start_row(uploaded_raw_invoice, "Unique ID")
+            # Read the Excel file, starting from the identified header row
+            st.session_state.raw_invoice = pd.read_excel(uploaded_raw_invoice, skiprows=range(start_row_raw_invoice))
             st.session_state.raw_invoice["Name"] = st.session_state.raw_invoice["Name"].str.replace(r' [A-Z]\b', '', regex=True)
             st.session_state.raw_invoice = st.session_state.raw_invoice[st.session_state.raw_invoice["Name"] != "Grand Total"]
 
         if uploaded_wsr_consolidated:
-            st.session_state.wsr_consolidated = pd.read_excel(uploaded_wsr_consolidated, sheet_name="Invoice Review", skiprows=5)
+            # Use the find_start_row function to identify the header row in the WSR Consolidated Excel file
+            start_row_wsr_consolidated = find_start_row(uploaded_wsr_consolidated, "Vendor Name", "Invoice Review")
+            # Read the Excel file, starting from the identified header row in the "Invoice Review" sheet
+            st.session_state.wsr_consolidated = pd.read_excel(uploaded_wsr_consolidated, skiprows=range(start_row_wsr_consolidated), sheet_name="Invoice Review")
             st.session_state.wsr_consolidated['Reporting Week (MM/DD/YYYY)'] = pd.to_datetime(st.session_state.wsr_consolidated['Reporting Week (MM/DD/YYYY)'], unit='D', origin='1899-12-30')
             st.session_state.wsr_consolidated["Contractor (Last Name, First Name)2"] = st.session_state.wsr_consolidated["Contractor (Last Name, First Name)2"].str.replace(r' [A-Z]\b', '', regex=True)
             st.session_state.wsr_consolidated = st.session_state.wsr_consolidated.ffill()
             st.session_state.wsr_consolidated = st.session_state.wsr_consolidated[st.session_state.wsr_consolidated["Vendor Name"] != "Grand Total"]
 
         if uploaded_onboarding_tracker:
-            st.session_state.onboarding_tracker = pd.read_excel(uploaded_onboarding_tracker, sheet_name="Master List")
+            # Use the find_start_row function to identify the header row in the Onboarding Tracker Excel file
+            start_row_onboarding_tracker = find_start_row(uploaded_onboarding_tracker, "Candidate Unique ID", "Master List")
+            # Read the Excel file, starting from the identified header row in the "Master List" sheet
+            st.session_state.onboarding_tracker = pd.read_excel(uploaded_onboarding_tracker, skiprows=range(start_row_onboarding_tracker), sheet_name="Master List")
             st.session_state.onboarding_tracker["Candidate Name"] = st.session_state.onboarding_tracker["Candidate Name"].str.replace(r' [A-Z]\b', '', regex=True)
     except Exception as e:
         st.warning("An error occurred while processing the uploaded files. Please make sure you've uploaded the correct files.")
