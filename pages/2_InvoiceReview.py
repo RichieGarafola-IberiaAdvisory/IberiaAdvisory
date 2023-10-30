@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 import base64
 from openpyxl import Workbook
@@ -61,8 +61,36 @@ def check_password():
 if check_password():
     is_logged_in = True
     
+    # Define a function to calculate the x-week lookback for a given date
+    def calculate_x_week_lookback(effective_date, x):
+        return effective_date - timedelta(weeks=x)
+    
     # Define the Streamlit app
     st.title("Invoice Data Analysis")
+    
+    # Sidebar instructions
+    if st.sidebar.checkbox("Show Instructions"):
+        st.write("This application is a tool for tracking and analyzing data for subcontractors invoices.")
+        st.write("The labor invoice data will be emailed and can be found in the group invoice email.")
+        st.write("The Consolidated WSR file can be found in the following subdirectory 'Restored FMO1', 'Cross Contract Portfolio', 'Y - WSR Analysis', select the latest file.")
+        st.write("The Onboarding Tracker file can be found in the following subdirectory 'Restored FMO1', 'Onboarding', select the latest tracker file.")
+        st.write("Upload the Excel files.")
+
+        st.write("After uploading the files, the application processes the data.")
+        st.write("You will be prompted to add the date range for each contractor on the invoice, it is advised to collect the allocated date ranges prior to running script.")
+        st.write("- Extracts relevant columns from both files.")
+        st.write("- Normalizes employee names by removing middle initials.")
+        st.write("- Filters employees who have 'Final Approval' in the Onboarding Tracker.")
+        st.write("- Determines which employees are above the 'Tripwire Rate' in the Hourly Cost file.")
+        st.write("- Maps 'PLC Desc' to 'Correct LCAT Syntax' using data from the Onboarding Tracker.")
+        st.write("Finally, it presents a DataFrame with processed data in a table format under the 'Processed Data' section.")
+
+        st.write("If you want to save the processed data to an Excel file, you can:")
+        st.write("- Enter a name for the Excel file in the 'Enter Excel File Name (without extension)' text field.")
+        st.write("- Click the 'Save Data to Excel' button.")
+        st.write("This will generate a download link for the Excel file. Click on the link to download the processed data.")
+        st.write("The file will be saved to the Downloads folder by default.")
+
 
     # Initialize session state
     if 'raw_invoice' not in st.session_state:
@@ -75,8 +103,8 @@ if check_password():
         st.session_state.raw_invoice_copy = None
     if 'wsr_consolidated_copy' not in st.session_state:
         st.session_state.wsr_consolidated_copy = None
-    if 'date_ranges' not in st.session_state:
-        st.session_state.date_ranges = {}
+    if 'x_week_lookback' not in st.session_state:
+        st.session_state.x_week_lookback = 4
     if 'submit_button_pressed' not in st.session_state:
         st.session_state.submit_button_pressed = False
 
@@ -109,72 +137,58 @@ if check_password():
     if st.session_state.raw_invoice is not None:
         st.write(st.session_state.raw_invoice)
 
+    # Input field for the number of weeks lookback
+    x_week_lookback = st.sidebar.number_input("Number of Weeks Lookback", min_value=1, value=st.session_state.x_week_lookback)
 
-    # Get unique combinations of Name and Reporting Week if 'raw_invoice' is available
-    if st.session_state.raw_invoice is not None:
-        unique_combinations = st.session_state.raw_invoice[['Name', 'Effective Bill Date']].drop_duplicates()
-
-        for index, row in unique_combinations.iterrows():
-            name = row['Name']
-            effective_date = row['Effective Bill Date']
-
-            # Sidebar for user input
-            st.sidebar.header(f"User Input for {name} ({effective_date})")
-            start_date_input = st.sidebar.text_input(f"Enter Start Date (MM/DD/YYYY) for {name} ({effective_date}):", key=f"{name}_{effective_date}_start_date")
-            end_date_input = st.sidebar.text_input(f"Enter End Date (MM/DD/YYYY) for {name} ({effective_date}):", key=f"{name}_{effective_date}_end_date")
-
-            if start_date_input and end_date_input:
-                st.session_state.date_ranges[(name, effective_date)] = (start_date_input, end_date_input)
-    else:
-        st.warning("Please upload the 'raw_invoice' Excel file before continuing.")
-
-
-
-
-
-    # "Submit All Date Ranges" button
-    if st.sidebar.button("Submit All Date Ranges"):
-        st.session_state.submit_button_pressed = True
-
-    # Perform calculations when the button is pressed
-    if st.session_state.submit_button_pressed:
+    # "Submit" button
+    if st.sidebar.button("Submit"):
         if st.session_state.raw_invoice_copy is None:
             st.session_state.raw_invoice_copy = st.session_state.raw_invoice.copy()
             st.session_state.wsr_consolidated_copy = st.session_state.wsr_consolidated.copy()
 
-        for (name, effective_date), (start_date, end_date) in st.session_state.date_ranges.items():
-            start_date = pd.to_datetime(start_date, format='%m/%d/%Y')
-            end_date = pd.to_datetime(end_date, format='%m/%d/%Y')
+        # Iterate through each row in the raw_invoice dataset
+        for index, raw_invoice_row in st.session_state.raw_invoice_copy.iterrows():
+            name = raw_invoice_row['Name']  # Extract the Name from the row
+            effective_date = raw_invoice_row['Effective Bill Date']  # Extract the Effective Bill Date from the row
+            start_date = effective_date - timedelta(weeks=x_week_lookback)  # Calculate the start date based on the effective date
 
-            filtered_wsr = st.session_state.wsr_consolidated_copy[st.session_state.wsr_consolidated_copy['Contractor (Last Name, First Name)2'] == name]
-            filtered_wsr = filtered_wsr[(filtered_wsr['Reporting Week (MM/DD/YYYY)'] >= start_date) &
-                                        (filtered_wsr['Reporting Week (MM/DD/YYYY)'] <= end_date)]
+            # Filter the WSR_consolidated_copy DataFrame for the specified date range
+            filtered_wsr = st.session_state.wsr_consolidated_copy[
+                (st.session_state.wsr_consolidated_copy['Contractor (Last Name, First Name)2'] == name) &
+                (st.session_state.wsr_consolidated_copy['Reporting Week (MM/DD/YYYY)'] >= start_date) &
+                (st.session_state.wsr_consolidated_copy['Reporting Week (MM/DD/YYYY)'] <= effective_date)  # End date is the effective date
+            ]
 
+            # Calculate the total hours for that person within the specified date range
             total_hours = filtered_wsr['Sum of Time Spent (Hours) '].sum()
-            contract_rate = filtered_wsr['Sum of Cost Calc'].sum() / total_hours
+
+            # Calculate Contract Rate: Sum of Cost Calc / Sum of Time Spent (Hours)
+            contract_rate = filtered_wsr['Sum of Cost Calc'].sum() / total_hours if total_hours > 0 else 0
             contract_rate = round(contract_rate, 2)
             cost_check = contract_rate * total_hours
 
-            st.session_state.raw_invoice_copy.loc[st.session_state.raw_invoice_copy['Name'] == name, 'WSR Hours'] = total_hours
-            st.session_state.raw_invoice_copy.loc[st.session_state.raw_invoice_copy['Name'] == name, 'Contract Rate'] = contract_rate
-            st.session_state.raw_invoice_copy.loc[st.session_state.raw_invoice_copy['Name'] == name, 'Cost Check'] = cost_check
+            st.session_state.raw_invoice_copy.at[index, 'WSR Hours'] = total_hours
+            st.session_state.raw_invoice_copy.at[index, 'Contract Rate'] = contract_rate
+            st.session_state.raw_invoice_copy.at[index, 'Cost Check'] = cost_check
+
+
 
         # Display the updated DataFrame in Streamlit
-        st.write(st.session_state.raw_invoice_copy)  
+        st.write(st.session_state.raw_invoice_copy)
+
+    # Input field for Excel file name
+    excel_filename = st.text_input("Enter Excel File Name (without extension)", "InvoiceReview")
 
 
-        # Input field for Excel file name
-        excel_filename = st.text_input("Enter Excel File Name (without extension)", "InvoiceReview")
+    # Save to Excel button
+    if st.button('Save Data to Excel'):
+        # Save the filtered dataframe to an Excel file in memory
+        excel_buffer = BytesIO()
+        st.session_state.raw_invoice_copy.to_excel(excel_buffer, index=False)
+        excel_data = excel_buffer.getvalue()
 
-        # Save to Excel button
-        if st.button('Save Data to Excel'):
-            # Save the filtered dataframe to an Excel file in memory
-            excel_buffer = BytesIO()
-            st.session_state.raw_invoice_copy.to_excel(excel_buffer, index=False)
-            excel_data = excel_buffer.getvalue()
-
-            # Generate a download link for the Excel file
-            b64 = base64.b64encode(excel_data).decode('utf-8')
-            excel_filename = f"{excel_filename}.xlsx"
-            href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="{excel_filename}">Download Excel File</a>'
-            st.markdown(href, unsafe_allow_html=True)
+        # Generate a download link for the Excel file
+        b64 = base64.b64encode(excel_data).decode('utf-8')
+        excel_filename = f"{excel_filename}.xlsx"
+        href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="{excel_filename}">Download Excel File</a>'
+        st.markdown(href, unsafe_allow_html=True)
