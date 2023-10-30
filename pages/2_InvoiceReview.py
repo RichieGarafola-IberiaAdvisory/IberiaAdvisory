@@ -77,7 +77,7 @@ if check_password():
         st.write("Upload the Excel files.")
 
         st.write("After uploading the files, the application processes the data.")
-        st.write("You will be prompted to add the date range for each contractor on the invoice, it is advised to collect the allocated date ranges prior to running script.")
+        st.write("You will be prompted to add the Weekly lookback period.")
         st.write("- Extracts relevant columns from both files.")
         st.write("- Normalizes employee names by removing middle initials.")
         st.write("- Filters employees who have 'Final Approval' in the Onboarding Tracker.")
