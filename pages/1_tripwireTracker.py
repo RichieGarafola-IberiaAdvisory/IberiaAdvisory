@@ -4,6 +4,7 @@ import streamlit as st
 from openpyxl import Workbook
 import base64
 from io import BytesIO
+from datetime import datetime, timedelta
 
 # Set the page configuration for the Streamlit application, including the title and icon.
 st.set_page_config(
@@ -58,6 +59,8 @@ def check_password():
 # Check the user password using the check_password() function and sets the is_logged_in flag to True if the password is correct.
 if check_password():
     is_logged_in = True
+    
+    start_time = datetime.now()
     
     # Function that allows you to find where the header is located within an Excel sheet
     def find_start_row(file_path, column_name, sheet_name=None):
@@ -219,4 +222,7 @@ if check_password():
             href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="{excel_filename}">Download Excel File</a>'
             st.markdown(href, unsafe_allow_html=True)
                 
-            
+        end_time = datetime.now()
+        elapsed_time = end_time - start_time
+        
+        st.write(f"Elapsed Time: {elapsed_time}")
