@@ -59,44 +59,6 @@ def check_password():
 if check_password():
     is_logged_in = True
 
-    # Function that allows you to find where the header is located within an Excel sheet
-def find_start_row(file_path, column_name, sheet_name=None):
-    """
-    Find the starting row index containing a specific column name in an Excel sheet.
-
-    Parameters:
-    - file_path (str): The file path of the Excel file to be searched.
-    - column_name (str): The name of the column to search for within the sheet.
-    - sheet_name (str, optional): The name of the sheet in the Excel file (default is None).
-      If sheet_name is not provided, the function attempts to read the first sheet.
-
-    Returns:
-    - int: The row index where the specified column name is found.
-
-    Raises:
-    - ValueError: If the specified column name is not found in the sheet.
-
-    This function reads the Excel file specified by 'file_path' and searches for the
-    row containing the 'column_name' in the specified 'sheet_name' (or the first sheet if
-    'sheet_name' is not provided). Once the row is found, the function returns its index.
-    
-    If the column name is not found in the sheet, a ValueError is raised.
-
-    Example usage:
-    start_row = find_start_row("example.xlsx", "Name", "Sheet1")
-    """
-    if sheet_name is None:
-        # If sheet_name is not provided, try to read the first sheet
-        df = pd.read_excel(file_path, header=None, index_col=None)
-    else:
-        df = pd.read_excel(file_path, header=None, index_col=None, sheet_name=sheet_name)
-
-    for row_number, row in df.iterrows():
-        if column_name in row.values:
-            return row_number
-
-    raise ValueError(f'Column "{column_name}" not found in the sheet "{sheet_name}" of the file.')
-
     # Streamlit UI
     st.title('Tripwire Tracker App')
 
@@ -127,77 +89,71 @@ def find_start_row(file_path, column_name, sheet_name=None):
     # Upload Onboarding Tracker Excel file
     tracker_file = st.file_uploader("Upload Onboarding Tracker Excel File", type=["xlsx"])
     hourly_cost_file = st.file_uploader("Upload Hourly Cost Excel File", type=["xlsx"])
-    
-    # Specify the Hourly Cost sheet name for the provided file
     hourly_cost_sheet_name = st.text_input("Enter Hourly Cost Sheet Name:")
-    
-    # Specify the Tripwire Tracker sheet name in the Onboarding Tracker
-    tracker_sheet_name = 'Tripwire Tracker'
 
     if tracker_file is not None and hourly_cost_file is not None:
         # Check if the user has provided a sheet name for hourly_cost_df
         if not hourly_cost_sheet_name:
             st.warning("Please enter the sheet name for the Hourly Cost Excel file.")
         else:
-            # Use the find_start_row function to find the header row containing the desired column names
-            tracker_header_row_index = find_start_row(tracker_file, "Employee Name", tracker_sheet_name)
-    
-            # Read the Excel file into a Pandas DataFrame
-            tracker_df = pd.read_excel(tracker_file, sheet_name=tracker_sheet_name, header=tracker_header_row_index)
-    
-            # Use the find_start_row function to find the header row containing the desired column names
-            hourly_cost_header_row_index = find_start_row(hourly_cost_file, "Name", hourly_cost_sheet_name)
-            
-            # Read the Excel file into a Pandas DataFrame, specifying the header row index
-            hourly_cost_df = pd.read_excel(hourly_cost_file, sheet_name=hourly_cost_sheet_name, header=hourly_cost_header_row_index)
-    
+            # Read the uploaded Excel files into Pandas DataFrames
+            tracker_df = pd.read_excel(tracker_file, sheet_name='Tripwire Tracker')
+            hourly_cost_df = pd.read_excel(hourly_cost_file, sheet_name=hourly_cost_sheet_name)
+
             try:
+    
+                # Set the header row as the column names for Onboarding Tracker
+                tracker_df.columns = tracker_df.iloc[4]
+                tracker_df = tracker_df[5:]
                 tracker_df.reset_index(drop=True, inplace=True)
                 tracker_df = tracker_df[["Employee Name", "Final Approval"]]
-            
+        
+                # Set the header row as the column names for Hourly Cost
+                hourly_cost_df.columns = hourly_cost_df.iloc[6]
+                hourly_cost_df = hourly_cost_df[7:]
                 hourly_cost_df.reset_index(drop=True, inplace=True)
                 hourly_cost_df = hourly_cost_df[["Name", "PLC Desc", "Hourly Cost $/hr", "Above Tripwire Rate?"]]
-                    
+                
                 # Convert the "Hourly Cost $/hr" column to numeric (if it's not already)
                 hourly_cost_df["Hourly Cost $/hr"] = pd.to_numeric(hourly_cost_df["Hourly Cost $/hr"], errors="coerce")
-                    
+                
                 # Round the "Hourly Cost $/hr" column to two decimal places
                 hourly_cost_df["Hourly Cost $/hr"] = hourly_cost_df["Hourly Cost $/hr"].round(2)
-            
+        
                 # Read LCAT Normalization data from Onboarding Tracker
                 lcat_df = pd.read_excel(tracker_file, sheet_name='LCAT Normalization')
                 lcat_df = lcat_df[["Vendor LCATs", "Correct LCAT Syntax"]]
-            
+        
                 # Remove middle initials from names in both DataFrames
                 tracker_df["Employee Name"] = tracker_df["Employee Name"].str.replace(r' [A-Z]\b', '', regex=True)
                 hourly_cost_df["Name"] = hourly_cost_df["Name"].str.replace(r' [A-Z]\b', '', regex=True)
-            
+        
                 # Filter Data
                 filtered_tripwire_df = tracker_df[tracker_df["Final Approval"] == "Y"]
                 names_above_tripwire = hourly_cost_df[hourly_cost_df["Above Tripwire Rate?"] == "Yes"]["Name"]
                 names_allow_exceed_tripwire = filtered_tripwire_df[
                     filtered_tripwire_df["Final Approval"] == "Y"]["Employee Name"]
                 names_not_in_tripwire = names_above_tripwire[~names_above_tripwire.isin(names_allow_exceed_tripwire)]
-            
+        
                 # Remove newline characters from the "PLC Desc" column in hourly_cost_df
                 hourly_cost_df["PLC Desc"] = hourly_cost_df["PLC Desc"].str.strip()
-            
+        
                 # Create a dictionary to map "Vendor LCATs" to "Correct LCAT Syntax"
                 lcat_mapping = lcat_df.set_index("Vendor LCATs")["Correct LCAT Syntax"].to_dict()
-            
+        
                 # Map the "PLC Desc" column in hourly_cost_df to get corrected LCAT syntax
                 hourly_cost_df["Correct LCAT Syntax"] = hourly_cost_df["PLC Desc"].map(lcat_mapping)
-            
+        
                 # Filter again
                 filtered_hourly_cost_df = hourly_cost_df[hourly_cost_df["Name"].isin(names_not_in_tripwire)]
-            
+        
                 # Output
                 result_df = filtered_hourly_cost_df[["Name", "PLC Desc", "Correct LCAT Syntax", "Hourly Cost $/hr", "Above Tripwire Rate?"]]
-            
+        
                 # Display the resulting DataFrame
                 st.subheader("Processed Data")
                 st.dataframe(result_df)
-    
+
             except KeyError as e:
                 # Inform the user to check if any tripwires are flagged
                 st.error(f"Please check if any tripwires are flagged in the excel files.")                
