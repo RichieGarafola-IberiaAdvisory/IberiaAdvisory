@@ -16,6 +16,8 @@ st.set_page_config(
     layout="wide"
 )
 
+start_time = datetime.now()
+
 # Change text color, font name, and size
 st.markdown(
     """
@@ -344,3 +346,8 @@ if check_password():
         excel_filename = f"{excel_filename}.xlsx"
         href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="{excel_filename}">Download Excel File</a>'
         st.markdown(href, unsafe_allow_html=True)
+
+    end_time = datetime.now()
+    elapsed_time = end_time - start_time
+    
+    st.write(f"Elapsed Time: {elapsed_time}")
