@@ -270,40 +270,63 @@ if check_password():
     # Allow the user to select visualizations to display
     visualizations_to_display = st.sidebar.radio("Select Insights to Display", ["Summary Statistics", "Distribution of Total Hours", "Unique Effective Bill Dates", "Total Hours vs. Contract Rate", "High Contract Rate Rows", "Distribution of Contract Rates"])
 
-    # Display selected visualizations
+    @st.cache_resource()
+    def calculate_summary_statistics(dataframe):
+        return dataframe[['Total', 'WSR Hours', 'Contract Rate', 'Cost Check']].describe()
+    
     if visualizations_to_display == "Summary Statistics" and st.session_state.raw_invoice_copy is not None:
-        summary_stats = st.session_state.raw_invoice_copy[['Total', 'WSR Hours', 'Contract Rate', 'Cost Check']].describe()
+        summary_stats = calculate_summary_statistics(st.session_state.raw_invoice_copy)
         st.write("Summary Statistics:")
         st.write(summary_stats)
-
+    
     if visualizations_to_display == "Distribution of Total Hours" and st.session_state.raw_invoice_copy is not None:
         st.write("Distribution of Total Hours:")
-        fig, ax = plt.subplots()
-        sns.histplot(st.session_state.raw_invoice_copy['WSR Hours'], kde=True, ax=ax)
-        st.pyplot(fig)
-
+        # Create columns to indirectly resize the visualization
+        col1, col2 = st.columns(2)
+        with col1:
+            fig, ax = plt.subplots()
+            sns.histplot(st.session_state.raw_invoice_copy['WSR Hours'], kde=True, ax=ax)
+            st.pyplot(fig)
+    
     if visualizations_to_display == "Unique Effective Bill Dates" and st.session_state.raw_invoice_copy is not None:
         st.write("Unique Effective Bill Dates:")
         unique_dates_df = st.session_state.raw_invoice_copy[['Effective Bill Date']].drop_duplicates()
         st.write(unique_dates_df)
-
+            
     if visualizations_to_display == "Total Hours vs. Contract Rate" and st.session_state.raw_invoice_copy is not None:
         st.write("Scatter Plot: Total Hours vs. Contract Rate")
-        scatter_plot_data = st.session_state.raw_invoice_copy[['WSR Hours', 'Contract Rate']]
-        fig, ax = plt.subplots()
-        sns.scatterplot(x='WSR Hours', y='Contract Rate', data=scatter_plot_data, ax=ax)
-        st.pyplot(fig)
-
+        # Create columns to indirectly resize the visualization
+        col1, col2 = st.columns(2)
+        with col1:             
+            scatter_plot_data = st.session_state.raw_invoice_copy[['WSR Hours', 'Contract Rate']]
+        # Vectorized approach
+            # scatter_plot_data = st.session_state.raw_invoice_copy.loc[:, ['WSR Hours', 'Contract Rate']]
+    
+            fig, ax = plt.subplots()
+            sns.scatterplot(x='WSR Hours', y='Contract Rate', data=scatter_plot_data, ax=ax)
+            st.pyplot(fig)
+    
     if visualizations_to_display == "High Contract Rate Rows" and st.session_state.raw_invoice_copy is not None:
+                 
         high_rate_rows = st.session_state.raw_invoice_copy[st.session_state.raw_invoice_copy['Contract Rate'] > 187.50]
+    # Vectorized approach
+        # high_rate_rows = st.session_state.raw_invoice_copy.query('Contract Rate > 187.50')
+                 
         st.warning(f"Rows with Contract Rate above threshold:")
         st.write(high_rate_rows)
-
+    
     if visualizations_to_display == "Distribution of Contract Rates" and st.session_state.raw_invoice_copy is not None:
         st.write("Distribution of Contract Rates:")
-        fig, ax = plt.subplots()
-        sns.boxplot(x=st.session_state.raw_invoice_copy['Contract Rate'], ax=ax)
-        st.pyplot(fig)    
+        # Create columns to indirectly resize the visualization
+        col1, col2 = st.columns(2)
+        with col1: 
+            fig, ax = plt.subplots()
+    
+            sns.boxplot(x=st.session_state.raw_invoice_copy['Contract Rate'], ax=ax)
+        # Vectorized approach    
+            # sns.boxplot(x='Contract Rate', data=st.session_state.raw_invoice_copy, ax=ax)
+    
+            st.pyplot(fig)    
 
     # Input field for Excel file name
     excel_filename = st.text_input("Enter Excel File Name (without extension)", "InvoiceReview")
