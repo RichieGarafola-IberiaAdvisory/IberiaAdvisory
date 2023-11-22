@@ -16,8 +16,6 @@ st.set_page_config(
     layout="wide"
 )
 
-start_time = datetime.now()
-
 # Change text color, font name, and size
 st.markdown(
     """
@@ -227,11 +225,32 @@ if check_password():
         # Create a DataFrame to store misalignment flags
         misalignment_flags = pd.DataFrame(columns=['Name', 'Misalignment'])
 
-        # Iterate through each row in the raw_invoice dataset
+        # Iterate through each row in the raw_invoice_copy dataset
         for index, raw_invoice_row in st.session_state.raw_invoice_copy.iterrows():
-            name = raw_invoice_row['Name']  # Extract the Name from the row
-            effective_date = raw_invoice_row['Effective Bill Date']  # Extract the Effective Bill Date from the row
-            start_date = effective_date - timedelta(weeks=x_week_lookback)  # Calculate the start date based on the effective date
+
+            # Extract the Unique ID from the row
+            unique_id = raw_invoice_row['Unique ID']
+
+            # Extract the Name from the row
+            name = raw_invoice_row['Name']
+
+            # Look up the corresponding row in onboarding_tracker
+            onboarding_row = st.session_state.onboarding_tracker[
+                (st.session_state.onboarding_tracker['Candidate Unique ID'] == unique_id)
+            ]
+
+            # Create a row with relevant data
+            if not onboarding_row.empty:
+                st.session_state.raw_invoice_copy.at[index, 'TO'] = onboarding_row['Task Order #'].values[0]
+                st.session_state.raw_invoice_copy.at[index, 'Vendor'] = onboarding_row['Vendor'].values[0]
+                st.session_state.raw_invoice_copy.at[index, 'Onboard Date'] = onboarding_row['Vendor Submission Date'].values[0]
+                st.session_state.raw_invoice_copy.at[index, 'Onboard LCAT'] = onboarding_row['Candidate Proposed LCAT'].values[0]
+
+            # Extract the Effective Bill Date from the row
+            effective_date = raw_invoice_row['Effective Bill Date']
+
+            # Calculate the start date based on the effective date
+            start_date = effective_date - timedelta(weeks=x_week_lookback)
 
             # Filter the WSR_consolidated_copy DataFrame for the specified date range
             filtered_wsr = st.session_state.wsr_consolidated_copy[
@@ -272,63 +291,40 @@ if check_password():
     # Allow the user to select visualizations to display
     visualizations_to_display = st.sidebar.radio("Select Insights to Display", ["Summary Statistics", "Distribution of Total Hours", "Unique Effective Bill Dates", "Total Hours vs. Contract Rate", "High Contract Rate Rows", "Distribution of Contract Rates"])
 
-    @st.cache_resource()
-    def calculate_summary_statistics(dataframe):
-        return dataframe[['Total', 'WSR Hours', 'Contract Rate', 'Cost Check']].describe()
-    
+    # Display selected visualizations
     if visualizations_to_display == "Summary Statistics" and st.session_state.raw_invoice_copy is not None:
-        summary_stats = calculate_summary_statistics(st.session_state.raw_invoice_copy)
+        summary_stats = st.session_state.raw_invoice_copy[['Total', 'WSR Hours', 'Contract Rate', 'Cost Check']].describe()
         st.write("Summary Statistics:")
         st.write(summary_stats)
-    
+
     if visualizations_to_display == "Distribution of Total Hours" and st.session_state.raw_invoice_copy is not None:
         st.write("Distribution of Total Hours:")
-        # Create columns to indirectly resize the visualization
-        col1, col2 = st.columns(2)
-        with col1:
-            fig, ax = plt.subplots()
-            sns.histplot(st.session_state.raw_invoice_copy['WSR Hours'], kde=True, ax=ax)
-            st.pyplot(fig)
-    
+        fig, ax = plt.subplots()
+        sns.histplot(st.session_state.raw_invoice_copy['WSR Hours'], kde=True, ax=ax)
+        st.pyplot(fig)
+
     if visualizations_to_display == "Unique Effective Bill Dates" and st.session_state.raw_invoice_copy is not None:
         st.write("Unique Effective Bill Dates:")
         unique_dates_df = st.session_state.raw_invoice_copy[['Effective Bill Date']].drop_duplicates()
         st.write(unique_dates_df)
-            
+
     if visualizations_to_display == "Total Hours vs. Contract Rate" and st.session_state.raw_invoice_copy is not None:
         st.write("Scatter Plot: Total Hours vs. Contract Rate")
-        # Create columns to indirectly resize the visualization
-        col1, col2 = st.columns(2)
-        with col1:             
-            scatter_plot_data = st.session_state.raw_invoice_copy[['WSR Hours', 'Contract Rate']]
-        # Vectorized approach
-            # scatter_plot_data = st.session_state.raw_invoice_copy.loc[:, ['WSR Hours', 'Contract Rate']]
-    
-            fig, ax = plt.subplots()
-            sns.scatterplot(x='WSR Hours', y='Contract Rate', data=scatter_plot_data, ax=ax)
-            st.pyplot(fig)
-    
+        scatter_plot_data = st.session_state.raw_invoice_copy[['WSR Hours', 'Contract Rate']]
+        fig, ax = plt.subplots()
+        sns.scatterplot(x='WSR Hours', y='Contract Rate', data=scatter_plot_data, ax=ax)
+        st.pyplot(fig)
+
     if visualizations_to_display == "High Contract Rate Rows" and st.session_state.raw_invoice_copy is not None:
-                 
         high_rate_rows = st.session_state.raw_invoice_copy[st.session_state.raw_invoice_copy['Contract Rate'] > 187.50]
-    # Vectorized approach
-        # high_rate_rows = st.session_state.raw_invoice_copy.query('Contract Rate > 187.50')
-                 
         st.warning(f"Rows with Contract Rate above threshold:")
         st.write(high_rate_rows)
-    
+
     if visualizations_to_display == "Distribution of Contract Rates" and st.session_state.raw_invoice_copy is not None:
         st.write("Distribution of Contract Rates:")
-        # Create columns to indirectly resize the visualization
-        col1, col2 = st.columns(2)
-        with col1: 
-            fig, ax = plt.subplots()
-    
-            sns.boxplot(x=st.session_state.raw_invoice_copy['Contract Rate'], ax=ax)
-        # Vectorized approach    
-            # sns.boxplot(x='Contract Rate', data=st.session_state.raw_invoice_copy, ax=ax)
-    
-            st.pyplot(fig)    
+        fig, ax = plt.subplots()
+        sns.boxplot(x=st.session_state.raw_invoice_copy['Contract Rate'], ax=ax)
+        st.pyplot(fig)    
 
     # Input field for Excel file name
     excel_filename = st.text_input("Enter Excel File Name (without extension)", "InvoiceReview")
@@ -346,8 +342,3 @@ if check_password():
         excel_filename = f"{excel_filename}.xlsx"
         href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="{excel_filename}">Download Excel File</a>'
         st.markdown(href, unsafe_allow_html=True)
-
-    end_time = datetime.now()
-    elapsed_time = end_time - start_time
-    
-    st.write(f"Elapsed Time: {elapsed_time}")
