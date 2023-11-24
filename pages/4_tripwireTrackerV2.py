@@ -282,20 +282,23 @@ if check_password():
 
     selected_visualization = st.sidebar.selectbox("Select Visualization", visualization_options)
 
+# Check if data is uploaded before generating visualizations
+if result_df is None:
+    st.warning("Please upload the data before selecting a visualization.")
+else:
     # Display selected visualization
     col1, col2 = st.columns(2)
     with col1:
         if selected_visualization == "Histogram: Hourly Cost Distribution":
             generate_histogram(result_df)
-        elif selected_visualization == "Box Plot: Hourly Cost Distribution for Employees":# Above Tripwire Rate":
-            generate_box_plot(hourly_cost_df)
-        # elif selected_visualization == "Pair Plot: Hourly Cost Relationships":
-        #     generate_pair_plot(result_df)
-        #     # generate_pair_plot(hourly_cost_df)
+        elif selected_visualization == "Box Plot: Hourly Cost Distribution for Employees Above Tripwire Rate":
+            generate_box_plot(result_df)
+        elif selected_visualization == "Pair Plot: Hourly Cost Relationships":
+            generate_pair_plot(result_df)
         elif selected_visualization == "Pie Chart: Proportion of Employees Above Tripwire Rate":
-            generate_pie_chart(hourly_cost_df)
+            generate_pie_chart(result_df)
         elif selected_visualization == "Box Plot: Hourly Cost Distribution by Correct LCAT Syntax":
-            generate_box_plot_lcat(hourly_cost_df)
+            generate_box_plot_lcat(result_df)
 
     end_time = datetime.now()
     elapsed_time = end_time - start_time
