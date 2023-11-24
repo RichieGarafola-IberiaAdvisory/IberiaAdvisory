@@ -282,37 +282,26 @@ if check_password():
 
     selected_visualization = st.sidebar.selectbox("Select Visualization", visualization_options)
 
-# Check if data is uploaded before generating visualizations
-if hourly_cost_df is None or tracker_df is None:
-    st.warning("Please upload both Onboarding Tracker and Hourly Cost files before selecting a visualization.")
-else:
+selected_visualization = st.sidebar.selectbox("Select Visualization", visualization_options)
+
+# Display selected visualization
+col1, col2 = st.columns(2)
+with col1:
     try:
-        # Process and filter data here (as per your existing code)
-
-        # Output
-        result_df = filtered_hourly_cost_df[["Name", "PLC Desc", "Correct LCAT Syntax", "Hourly Cost $/hr", "Above Tripwire Rate?"]]
-
-        # Display the resulting DataFrame
-        st.subheader("Processed Data")
-        st.dataframe(result_df)
-
-        # Display selected visualization
-        col1, col2 = st.columns(2)
-        with col1:
-            if selected_visualization == "Histogram: Hourly Cost Distribution":
-                generate_histogram(hourly_cost_df)
-            elif selected_visualization == "Box Plot: Hourly Cost Distribution for Employees Above Tripwire Rate":
-                generate_box_plot(result_df)
-            # elif selected_visualization == "Pair Plot: Hourly Cost Relationships":
-            #     generate_pair_plot(result_df)
-            elif selected_visualization == "Pie Chart: Proportion of Employees Above Tripwire Rate":
-                generate_pie_chart(result_df)
-            elif selected_visualization == "Box Plot: Hourly Cost Distribution by Correct LCAT Syntax":
-                generate_box_plot_lcat(result_df)
-
-    except KeyError as e:
-        # Inform the user to check if any tripwires are flagged
-        st.warning("Please check if any tripwires are flagged in the Excel files.")
+        if selected_visualization == "Histogram: Hourly Cost Distribution":
+            generate_histogram(filtered_hourly_cost_df)
+        elif selected_visualization == "Box Plot: Hourly Cost Distribution for Employees Above Tripwire Rate":
+            generate_box_plot(result_df)
+        elif selected_visualization == "Pair Plot: Hourly Cost Relationships":
+            generate_pair_plot(result_df)
+        elif selected_visualization == "Pie Chart: Proportion of Employees Above Tripwire Rate":
+            generate_pie_chart(result_df)
+        elif selected_visualization == "Box Plot: Hourly Cost Distribution by Correct LCAT Syntax":
+            generate_box_plot_lcat(result_df)
+    except Exception as e:
+        st.warning("An error occurred while generating the visualization. Please make sure to upload and process the data first.")
+        
+        
     end_time = datetime.now()
     elapsed_time = end_time - start_time
 
