@@ -104,7 +104,6 @@ if check_password():
 
         raise ValueError(f'Column "{column_name}" not found in the sheet "{sheet_name}" of the file.')
 
-
     # Function to generate histogram visualization
     @st.cache_resource()
     def generate_histogram(data):
@@ -187,6 +186,9 @@ if check_password():
     # Specify the Tripwire Tracker sheet name in the Onboarding Tracker
     tracker_sheet_name = 'Tripwire Tracker'
 
+    # Initialize the flag to indicate whether data is loaded
+    data_loaded = False
+
     if tracker_file is not None and hourly_cost_file is not None:
         # Check if the user has provided a sheet name for hourly_cost_df
         if not hourly_cost_sheet_name:
@@ -251,6 +253,9 @@ if check_password():
                 st.subheader("Processed Data")
                 st.dataframe(result_df)
 
+                # Set the flag to indicate that the data is loaded
+                data_loaded = True
+
             except KeyError as e:
                 # Inform the user to check if any tripwires are flagged
                 st.error(f"Please check if any tripwires are flagged in the excel files.")              
@@ -271,6 +276,12 @@ if check_password():
             href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="{excel_filename}">Download Excel File</a>'
             st.markdown(href, unsafe_allow_html=True)
 
+    #     end_time = datetime.now()
+    #     elapsed_time = end_time - start_time
+
+    #     st.write(f"Elapsed Time: {elapsed_time}")
+
+
     # Visualization Selection
     visualization_options = [
         "Histogram: Hourly Cost Distribution",
@@ -282,20 +293,21 @@ if check_password():
 
     selected_visualization = st.sidebar.selectbox("Select Visualization", visualization_options)
 
-    # Display selected visualization
-    col1, col2 = st.columns(2)
-    with col1:
-        if selected_visualization == "Histogram: Hourly Cost Distribution":
-            generate_histogram(result_df)
-        elif selected_visualization == "Box Plot: Hourly Cost Distribution for Employees":# Above Tripwire Rate":
-            generate_box_plot(hourly_cost_df)
-        # elif selected_visualization == "Pair Plot: Hourly Cost Relationships":
-        #     generate_pair_plot(result_df)
-        #     # generate_pair_plot(hourly_cost_df)
-        elif selected_visualization == "Pie Chart: Proportion of Employees Above Tripwire Rate":
-            generate_pie_chart(hourly_cost_df)
-        elif selected_visualization == "Box Plot: Hourly Cost Distribution by Correct LCAT Syntax":
-            generate_box_plot_lcat(hourly_cost_df)
+    # Display selected visualization only if data is loaded
+    if data_loaded:
+        col1, col2 = st.columns(2)
+        with col1:
+            if selected_visualization == "Histogram: Hourly Cost Distribution":
+                generate_histogram(result_df)
+            elif selected_visualization == "Box Plot: Hourly Cost Distribution for Employees":# Above Tripwire Rate":
+                generate_box_plot(hourly_cost_df)
+            # elif selected_visualization == "Pair Plot: Hourly Cost Relationships":
+            #     generate_pair_plot(result_df)
+            #     # generate_pair_plot(hourly_cost_df)
+            elif selected_visualization == "Pie Chart: Proportion of Employees Above Tripwire Rate":
+                generate_pie_chart(hourly_cost_df)
+            elif selected_visualization == "Box Plot: Hourly Cost Distribution by Correct LCAT Syntax":
+                generate_box_plot_lcat(hourly_cost_df)
 
     end_time = datetime.now()
     elapsed_time = end_time - start_time
