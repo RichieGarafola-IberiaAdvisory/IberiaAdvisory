@@ -300,7 +300,7 @@ if check_password():
             if selected_visualization == "Histogram: Hourly Cost Distribution":
                 generate_histogram(result_df)
             elif selected_visualization == "Box Plot: Hourly Cost Distribution for Employees":# Above Tripwire Rate":
-                generate_box_plot(hourly_cost_df)
+                generate_box_plot(result_df)
             # elif selected_visualization == "Pair Plot: Hourly Cost Relationships":
             #     generate_pair_plot(result_df)
             #     # generate_pair_plot(hourly_cost_df)
