@@ -242,8 +242,13 @@ if check_password():
 
             # Create a row with relevant data
             if not onboarding_row.empty:
+                vendor_values = onboarding_row['Vendor'].values
+                if len(vendor_values) > 0:
+                    st.session_state.raw_invoice_copy.at[index, 'Vendor'] = vendor_values[0]
+                # Add handling for the case when 'Vendor' values are NaN
+                else:
+                    st.session_state.raw_invoice_copy.at[index, 'Vendor'] = None
                 st.session_state.raw_invoice_copy.at[index, 'TO'] = onboarding_row['Task Order #'].values[0]
-                st.session_state.raw_invoice_copy.at[index, 'Vendor'] = onboarding_row['Vendor'].values[0]
                 st.session_state.raw_invoice_copy.at[index, 'Onboard Date'] = onboarding_row['Vendor Submission Date'].values[0]
                 st.session_state.raw_invoice_copy.at[index, 'Onboard LCAT'] = onboarding_row['Candidate Proposed LCAT'].values[0]
 
