@@ -173,7 +173,7 @@ if check_password():
 
     # Upload files in Streamlit
     st.write('Please ensure the TO29 Invoice has the following columns')
-    st.write('["Name","PLC Description","Effective Bill Date","Total"]')
+    st.write('["Unique ID","Name","PLC Description","Effective Bill Date","Total"]')
     
     uploaded_raw_invoice = st.file_uploader("Upload Raw Invoice Excel File", type=["xlsx"])
     uploaded_wsr_consolidated = st.file_uploader("Upload WSR Consolidated Excel File", type=["xlsb"])
