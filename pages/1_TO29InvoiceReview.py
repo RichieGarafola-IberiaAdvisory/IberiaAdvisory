@@ -36,7 +36,7 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
-# Display the Iberia Advisory image on the Streamlit application.
+Display the Iberia Advisory image on the Streamlit application.
 st.image("./Images/iberia-logo.png")
 
 ################
@@ -87,6 +87,7 @@ if check_password():
     
     # Function that allows you to find where the header is located within an Excel sheet
 
+    @st.cache_data()
     def find_start_row(file_path, column_name, sheet_name=None):
         """
         Find the starting row index containing a specific column name in an Excel sheet.
@@ -129,7 +130,7 @@ if check_password():
         return effective_date - timedelta(weeks=x)
 
     # Define the Streamlit app
-    st.title("Invoice Data Analysis")
+    st.title("TO29 Invoice Data Analysis")
 
     # Sidebar instructions
     if st.sidebar.checkbox("Show Instructions"):
@@ -174,7 +175,6 @@ if check_password():
     # Upload files in Streamlit
     st.write('Please ensure the TO29 Invoice has the following columns')
     st.write('["Unique ID","Name","PLC Description","Effective Bill Date","Total"]')
-    
     uploaded_raw_invoice = st.file_uploader("Upload Raw Invoice Excel File", type=["xlsx"])
     uploaded_wsr_consolidated = st.file_uploader("Upload WSR Consolidated Excel File", type=["xlsb"])
     uploaded_onboarding_tracker = st.file_uploader("Upload Onboarding Tracker Excel File", type=["xlsx"])
@@ -368,7 +368,7 @@ if check_password():
         # Save the filtered dataframe to an Excel file in memory
         excel_buffer = BytesIO()
         st.session_state.raw_invoice_copy.to_excel(excel_buffer, index=False)
-        excel_data = excel_buffer.getvalue()
+    excel_data = excel_buffer.getvalue()
 
         # Generate a download link for the Excel file
         b64 = base64.b64encode(excel_data).decode('utf-8')
