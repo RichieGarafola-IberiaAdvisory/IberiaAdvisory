@@ -368,7 +368,7 @@ if check_password():
         # Save the filtered dataframe to an Excel file in memory
         excel_buffer = BytesIO()
         st.session_state.raw_invoice_copy.to_excel(excel_buffer, index=False)
-    excel_data = excel_buffer.getvalue()
+        excel_data = excel_buffer.getvalue()
 
         # Generate a download link for the Excel file
         b64 = base64.b64encode(excel_data).decode('utf-8')
