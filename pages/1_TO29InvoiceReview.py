@@ -36,7 +36,7 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
-Display the Iberia Advisory image on the Streamlit application.
+# Display the Iberia Advisory image on the Streamlit application.
 st.image("./Images/iberia-logo.png")
 
 ################
