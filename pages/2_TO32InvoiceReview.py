@@ -11,7 +11,7 @@ import seaborn as sns
 
 # Set the page configuration for the Streamlit application, including the title and icon.
 st.set_page_config(
-    page_title="Iberia Advisory Invoice Review for TO29",
+    page_title="Iberia Advisory Invoice Review for TO32",
     page_icon="📊",
     layout="wide"
 )
@@ -130,7 +130,7 @@ if check_password():
         return effective_date - timedelta(weeks=x)
 
     # Define the Streamlit app
-    st.title("TO29 Invoice Data Analysis")
+    st.title("TO32 Invoice Data Analysis")
 
     # Sidebar instructions
     if st.sidebar.checkbox("Show Instructions"):
@@ -174,7 +174,7 @@ if check_password():
 
     # Upload files in Streamlit
     st.write('Please ensure the TO29 Invoice has the following columns')
-    st.write('["Unique ID","Name","PLC Description","Effective Bill Date","Sum of Transaction Hours"]')
+    st.write('["Unique ID","Name","PLC Descripintion","Effective Bill Date","Sum of Transaction Hours"]')
     uploaded_raw_invoice = st.file_uploader("Upload Raw Invoice Excel File", type=["xlsx"])
     uploaded_wsr_consolidated = st.file_uploader("Upload WSR Consolidated Excel File", type=["xlsb"])
     uploaded_onboarding_tracker = st.file_uploader("Upload Onboarding Tracker Excel File", type=["xlsx"])
