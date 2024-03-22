@@ -298,16 +298,28 @@ if check_password():
         col1, col2 = st.columns(2)
         with col1:
             if selected_visualization == "Histogram: Hourly Cost Distribution":
-                generate_histogram(result_df)
-            elif selected_visualization == "Box Plot: Hourly Cost Distribution for Employees":# Above Tripwire Rate":
-                generate_box_plot(hourly_cost_df)
+                if result_df.empty:
+                    st.warning("No data available for Histogram visualization.")
+                else:
+                    generate_histogram(result_df)
+            elif selected_visualization == "Box Plot: Hourly Cost Distribution for Employees":
+                if hourly_cost_df.empty:
+                    st.warning("No data available for Box Plot visualization.")
+                else:
+                    generate_box_plot(hourly_cost_df)
             # elif selected_visualization == "Pair Plot: Hourly Cost Relationships":
             #     generate_pair_plot(result_df)
             #     # generate_pair_plot(hourly_cost_df)
             elif selected_visualization == "Pie Chart: Proportion of Employees Above Tripwire Rate":
-                generate_pie_chart(hourly_cost_df)
+                if hourly_cost_df.empty:
+                    st.warning("No data available for Pie Chart visualization.")
+                else:
+                    generate_pie_chart(hourly_cost_df)
             elif selected_visualization == "Box Plot: Hourly Cost Distribution by Correct LCAT Syntax":
-                generate_box_plot_lcat(hourly_cost_df)
+                if hourly_cost_df.empty:
+                    st.warning("No data available for Box Plot (LCAT Syntax) visualization.")
+                else:
+                    generate_box_plot_lcat(hourly_cost_df)
 
     end_time = datetime.now()
     elapsed_time = end_time - start_time
