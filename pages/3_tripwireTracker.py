@@ -164,7 +164,7 @@ if check_password():
 
         st.write("After uploading the files, the application processes the data. It performs the following tasks:")
         st.write("- Extracts relevant columns from both files.")
-        st.write("- Normalizes employee names by removing middle initials.")
+        st.write("- Normalizes Candidate Names by removing middle initials.")
         st.write("- Filters employees who have 'Final Approval' in the Onboarding Tracker.")
         st.write("- Determines which employees are above the 'Tripwire Rate' in the Hourly Cost file.")
         st.write("- Maps 'PLC Desc' to 'Correct LCAT Syntax' using data from the Onboarding Tracker.")
@@ -195,7 +195,7 @@ if check_password():
             st.warning("Please enter the sheet name for the Hourly Cost Excel file.")
         else:
             # Use the find_start_row function to find the header row containing the desired column names
-            tracker_header_row_index = find_start_row(tracker_file, "Employee Name", tracker_sheet_name)
+            tracker_header_row_index = find_start_row(tracker_file, "Candidate Name", tracker_sheet_name)
 
             # Read the Excel file into a Pandas DataFrame
             tracker_df = pd.read_excel(tracker_file, sheet_name=tracker_sheet_name, header=tracker_header_row_index)
@@ -208,7 +208,7 @@ if check_password():
 
             try:
                 tracker_df.reset_index(drop=True, inplace=True)
-                tracker_df = tracker_df[["Employee Name", "Final Approval"]]
+                tracker_df = tracker_df[["Candidate Name", "Final Approval"]]
 
                 hourly_cost_df.reset_index(drop=True, inplace=True)
                 hourly_cost_df = hourly_cost_df[["Name", "PLC Desc", "Hourly Cost $/hr", "Above Tripwire Rate?"]]
@@ -224,14 +224,14 @@ if check_password():
                 lcat_df = lcat_df[["Vendor LCATs", "Correct LCAT Syntax"]]
 
                 # Remove middle initials from names in both DataFrames
-                tracker_df["Employee Name"] = tracker_df["Employee Name"].str.replace(r' [A-Z]\b', '', regex=True)
+                tracker_df["Candidate Name"] = tracker_df["Candidate Name"].str.replace(r' [A-Z]\b', '', regex=True)
                 hourly_cost_df["Name"] = hourly_cost_df["Name"].str.replace(r' [A-Z]\b', '', regex=True)
 
                 # Filter Data
                 filtered_tripwire_df = tracker_df[tracker_df["Final Approval"] == "Y"]
                 names_above_tripwire = hourly_cost_df[hourly_cost_df["Above Tripwire Rate?"] == "Yes"]["Name"]
                 names_allow_exceed_tripwire = filtered_tripwire_df[
-                    filtered_tripwire_df["Final Approval"] == "Y"]["Employee Name"]
+                    filtered_tripwire_df["Final Approval"] == "Y"]["Candidate Name"]
                 names_not_in_tripwire = names_above_tripwire[~names_above_tripwire.isin(names_allow_exceed_tripwire)]
 
                 # Remove newline characters from the "PLC Desc" column in hourly_cost_df
