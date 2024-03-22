@@ -250,7 +250,7 @@ if check_password():
                 result_df = filtered_hourly_cost_df[["Unique ID", "Name", "PLC Desc", "Correct LCAT Syntax", "Hourly Cost $/hr", "Above Tripwire Rate?"]]
 
                 # Display the resulting DataFrame
-                st.subheader("Processed Data")
+                st.subheader("Candidates Exceeding Tripwire Without Approval")
                 st.dataframe(result_df)
 
                 # Set the flag to indicate that the data is loaded
