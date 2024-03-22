@@ -211,7 +211,7 @@ if check_password():
                 tracker_df = tracker_df[["Candidate Name", "Final Approval"]]
 
                 hourly_cost_df.reset_index(drop=True, inplace=True)
-                hourly_cost_df = hourly_cost_df[["Unique ID". "Name", "PLC Desc", "Hourly Cost $/hr", "Above Tripwire Rate?"]]
+                hourly_cost_df = hourly_cost_df[["Unique ID", "Name", "PLC Desc", "Hourly Cost $/hr", "Above Tripwire Rate?"]]
 
                 # Convert the "Hourly Cost $/hr" column to numeric (if it's not already)
                 hourly_cost_df["Hourly Cost $/hr"] = pd.to_numeric(hourly_cost_df["Hourly Cost $/hr"], errors="coerce")
