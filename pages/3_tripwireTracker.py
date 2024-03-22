@@ -211,7 +211,7 @@ if check_password():
                 tracker_df = tracker_df[["Candidate Name", "Final Approval"]]
 
                 hourly_cost_df.reset_index(drop=True, inplace=True)
-                hourly_cost_df = hourly_cost_df[["Name", "PLC Desc", "Hourly Cost $/hr", "Above Tripwire Rate?"]]
+                hourly_cost_df = hourly_cost_df[["Unique ID". "Name", "PLC Desc", "Hourly Cost $/hr", "Above Tripwire Rate?"]]
 
                 # Convert the "Hourly Cost $/hr" column to numeric (if it's not already)
                 hourly_cost_df["Hourly Cost $/hr"] = pd.to_numeric(hourly_cost_df["Hourly Cost $/hr"], errors="coerce")
@@ -244,10 +244,10 @@ if check_password():
                 hourly_cost_df["Correct LCAT Syntax"] = hourly_cost_df["PLC Desc"].map(lcat_mapping)
 
                 # Filter again
-                filtered_hourly_cost_df = hourly_cost_df[hourly_cost_df["Name"].isin(names_not_in_tripwire)]
+                filtered_hourly_cost_df = hourly_cost_df[hourly_cost_df["Unique ID"].isin(names_not_in_tripwire)]
 
                 # Output
-                result_df = filtered_hourly_cost_df[["Name", "PLC Desc", "Correct LCAT Syntax", "Hourly Cost $/hr", "Above Tripwire Rate?"]]
+                result_df = filtered_hourly_cost_df[["Unique ID", "Name", "PLC Desc", "Correct LCAT Syntax", "Hourly Cost $/hr", "Above Tripwire Rate?"]]
 
                 # Display the resulting DataFrame
                 st.subheader("Processed Data")
